@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/AdguardTeam/golibs/logutil/slogutil"
@@ -13,8 +14,9 @@ import (
 
 // mysqlClient is a client for writing query log entries to MySQL.
 type mysqlClient struct {
-	db     *sql.DB
-	logger *slog.Logger
+	db       *sql.DB
+	logger   *slog.Logger
+	hostname string
 }
 
 // createTableSQL is the SQL statement for creating the query_log table.
@@ -22,6 +24,7 @@ const createTableSQL = `
 CREATE TABLE IF NOT EXISTS query_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     time DATETIME(6) NOT NULL,
+    server_hostname VARCHAR(255) NOT NULL,
     client_ip VARCHAR(45) NOT NULL,
     client_id VARCHAR(255),
     client_proto VARCHAR(20) NOT NULL,
@@ -42,6 +45,7 @@ CREATE TABLE IF NOT EXISTS query_log (
     result_json TEXT,
 
     INDEX idx_time (time),
+    INDEX idx_server_hostname (server_hostname),
     INDEX idx_client_ip (client_ip),
     INDEX idx_query_host (query_host),
     INDEX idx_filtered (is_filtered)
@@ -51,11 +55,11 @@ CREATE TABLE IF NOT EXISTS query_log (
 // insertSQL is the SQL statement for inserting a log entry.
 const insertSQL = `
 INSERT INTO query_log (
-    time, client_ip, client_id, client_proto, query_host, query_type,
-    query_class, upstream, elapsed_ns, cached, authenticated_data,
+    time, server_hostname, client_ip, client_id, client_proto, query_host,
+    query_type, query_class, upstream, elapsed_ns, cached, authenticated_data,
     ecs, answer, orig_answer, is_filtered, filter_reason, filter_rule,
     service_name, result_json
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // newMySQLClient creates a new MySQL client and initializes the database table.
@@ -88,11 +92,18 @@ func newMySQLClient(ctx context.Context, logger *slog.Logger, dsn string) (c *my
 		return nil, err
 	}
 
-	logger.InfoContext(ctx, "mysql client initialized successfully")
+	// Get the server hostname
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+
+	logger.InfoContext(ctx, "mysql client initialized successfully", "hostname", hostname)
 
 	return &mysqlClient{
-		db:     db,
-		logger: logger,
+		db:       db,
+		logger:   logger,
+		hostname: hostname,
 	}, nil
 }
 
@@ -134,6 +145,7 @@ func (c *mysqlClient) insertEntry(ctx context.Context, entry *logEntry) error {
 
 	_, err = c.db.ExecContext(ctx, insertSQL,
 		entry.Time,
+		c.hostname,
 		entry.IP.String(),
 		nullString(entry.ClientID),
 		string(entry.ClientProto),
