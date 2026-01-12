@@ -32,6 +32,19 @@ type QueryLogConfig struct {
 	// IgnoredEnabled defines whether hosts from the ignored list should be
 	// ignored.
 	IgnoredEnabled bool `yaml:"ignored_enabled"`
+
+	// MySQL contains the MySQL database configuration for query logging.
+	MySQL QueryLogMySQLConfig `yaml:"mysql"`
+}
+
+// QueryLogMySQLConfig contains MySQL database configuration for query logging.
+type QueryLogMySQLConfig struct {
+	// DSN is the MySQL data source name (connection string).
+	// Example: "user:password@tcp(localhost:3306)/adguard"
+	DSN string `yaml:"dsn"`
+
+	// Enabled defines if MySQL query logging is enabled.
+	Enabled bool `yaml:"enabled"`
 }
 
 // type check
