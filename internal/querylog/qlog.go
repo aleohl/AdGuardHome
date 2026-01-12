@@ -40,6 +40,9 @@ type queryLog struct {
 	// be modified.
 	buffer *container.RingBuffer[*logEntry]
 
+	// mysql is the MySQL client for writing log entries to MySQL database.
+	mysql *mysqlClient
+
 	// logFile is the path to the log file.
 	logFile string
 
@@ -106,6 +109,14 @@ func (l *queryLog) Shutdown(ctx context.Context) (err error) {
 		if err != nil {
 			// Don't wrap the error because it's informative enough as is.
 			return err
+		}
+	}
+
+	// Close MySQL client if it was initialized.
+	if l.mysql != nil {
+		mysqlErr := l.mysql.close()
+		if mysqlErr != nil {
+			l.logger.ErrorContext(ctx, "closing mysql client", slogutil.KeyError, mysqlErr)
 		}
 	}
 
@@ -246,6 +257,11 @@ func (l *queryLog) Add(params *AddParams) {
 	}
 
 	entry := newLogEntry(ctx, l.logger, params)
+
+	// Write to MySQL if enabled (async, non-blocking).
+	if l.mysql != nil {
+		l.mysql.add(ctx, entry)
+	}
 
 	l.bufferLock.Lock()
 	defer l.bufferLock.Unlock()

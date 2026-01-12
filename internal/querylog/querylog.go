@@ -1,6 +1,7 @@
 package querylog
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net"
@@ -61,6 +62,9 @@ type Config struct {
 	// BaseDir is the base directory for log files.
 	BaseDir string
 
+	// MySQLDSN is the MySQL data source name (connection string).
+	MySQLDSN string
+
 	// RotationIvl is the interval for log rotation.  After that period, the old
 	// log file will be renamed, NOT deleted, so the actual log retention time
 	// is twice the interval.
@@ -79,6 +83,9 @@ type Config struct {
 	// AnonymizeClientIP tells if the query log should anonymize clients' IP
 	// addresses.
 	AnonymizeClientIP bool
+
+	// MySQLEnabled tells if the query log writes logs to MySQL database.
+	MySQLEnabled bool
 }
 
 // AddParams is the parameters for adding an entry.
@@ -173,6 +180,15 @@ func newQueryLog(conf Config) (l *queryLog, err error) {
 	err = validateIvl(conf.RotationIvl)
 	if err != nil {
 		return nil, fmt.Errorf("unsupported interval: %w", err)
+	}
+
+	// Initialize MySQL client if enabled.
+	if conf.MySQLEnabled && conf.MySQLDSN != "" {
+		ctx := context.Background()
+		l.mysql, err = newMySQLClient(ctx, conf.Logger, conf.MySQLDSN)
+		if err != nil {
+			return nil, fmt.Errorf("initializing mysql client: %w", err)
+		}
 	}
 
 	return l, nil

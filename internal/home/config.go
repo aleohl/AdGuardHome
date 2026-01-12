@@ -416,6 +416,19 @@ type queryLogConfig struct {
 
 	// FileEnabled defines, if the query log is written to the file.
 	FileEnabled bool `yaml:"file_enabled"`
+
+	// MySQL contains the MySQL database configuration for query logging.
+	MySQL queryLogMySQLConfig `yaml:"mysql"`
+}
+
+// queryLogMySQLConfig contains MySQL database configuration for query logging.
+type queryLogMySQLConfig struct {
+	// DSN is the MySQL data source name (connection string).
+	// Example: "user:password@tcp(localhost:3306)/adguard"
+	DSN string `yaml:"dsn"`
+
+	// Enabled defines if MySQL query logging is enabled.
+	Enabled bool `yaml:"enabled"`
 }
 
 type statsConfig struct {

@@ -87,6 +87,8 @@ func initDNS(
 		MemSize:           config.QueryLog.MemSize,
 		Enabled:           config.QueryLog.Enabled,
 		FileEnabled:       config.QueryLog.FileEnabled,
+		MySQLEnabled:      config.QueryLog.MySQL.Enabled,
+		MySQLDSN:          config.QueryLog.MySQL.DSN,
 	}
 
 	engine, err = aghnet.NewIgnoreEngine(config.QueryLog.Ignored, config.QueryLog.IgnoredEnabled)
