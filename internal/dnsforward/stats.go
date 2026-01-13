@@ -72,6 +72,13 @@ func (s *Server) processQueryLogsAndStats(
 		)
 	}
 
+	// Process notifications for custom rule matches.
+	if s.notifier != nil {
+		s.processNotifications(ctx, dctx, host)
+	} else {
+		s.logger.DebugContext(ctx, "notifications disabled (notifier is nil)")
+	}
+
 	return resultCodeSuccess
 }
 

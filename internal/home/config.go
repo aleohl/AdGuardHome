@@ -119,6 +119,9 @@ type configuration struct {
 	// Stats is a block with statistics configuration settings.
 	Stats configmgr.StatsConfig `yaml:"statistics"`
 
+	// Notifications is a block with notifications configuration params.
+	Notifications notificationsConfig `yaml:"notifications"`
+
 	// Filters reflects the filters from [filtering.Config].  It's cloned to the
 	// config used in the filtering module at the startup.  Afterwards it's
 	// cloned from the filtering module back here.
@@ -230,6 +233,35 @@ type tlsConfigSettings struct {
 	ServePlainDNS bool `yaml:"-" json:"-"`
 }
 
+// notificationsConfig contains the configuration for notifications.
+type notificationsConfig struct {
+	// Pushover contains Pushover notification settings.
+	Pushover pushoverConfig `yaml:"pushover"`
+}
+
+// pushoverConfig contains Pushover-specific notification settings.
+type pushoverConfig struct {
+	// AppToken is the Pushover application API token.
+	AppToken string `yaml:"app_token"`
+
+	// UserKey is the Pushover user/group key.
+	UserKey string `yaml:"user_key"`
+
+	// Sound is the optional notification sound.
+	Sound string `yaml:"sound,omitempty"`
+
+	// RateLimitPer5Min is the maximum notifications per domain per 5 minutes.
+	// Default: 1.
+	RateLimitPer5Min int `yaml:"rate_limit_per_5min"`
+
+	// Priority is the Pushover message priority (-2 to 2).
+	// Default: 0 (normal).
+	Priority int `yaml:"priority"`
+
+	// Enabled defines if Pushover notifications are enabled.
+	Enabled bool `yaml:"enabled"`
+}
+
 // Default block host constants.
 const (
 	defaultSafeBrowsingBlockHost = "standard-block.dns.adguard.com"
@@ -320,6 +352,13 @@ var config = &configuration{
 		Interval:       timeutil.Duration(1 * timeutil.Day),
 		Enabled:        true,
 		IgnoredEnabled: false,
+	},
+	Notifications: notificationsConfig{
+		Pushover: pushoverConfig{
+			Enabled:          false,
+			RateLimitPer5Min: 1,
+			Priority:         0,
+		},
 	},
 	// NOTE: Keep these parameters in sync with the one put into
 	// client/src/helpers/filters/filters.ts by scripts/vetted-filters.
