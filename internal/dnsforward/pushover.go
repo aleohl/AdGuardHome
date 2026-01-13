@@ -30,16 +30,20 @@ type PushoverConfig struct {
 	// RateLimitPer5Min is the maximum notifications per domain per 5 minutes.
 	RateLimitPer5Min int
 
+	// GlobalRateLimitPerMin is the maximum notifications per minute globally.
+	GlobalRateLimitPerMin int
+
 	// Priority is the Pushover message priority (-2 to 2).
 	Priority int
 }
 
 // PushoverNotifier sends notifications via Pushover.
 type PushoverNotifier struct {
-	logger    *slog.Logger
-	client    *http.Client
-	rateLimit *domainRateLimit
-	config    *PushoverConfig
+	logger          *slog.Logger
+	client          *http.Client
+	domainRateLimit *domainRateLimit
+	globalRateLimit *globalRateLimit
+	config          *PushoverConfig
 }
 
 // NewPushoverNotifier creates a new Pushover notifier.
@@ -49,8 +53,9 @@ func NewPushoverNotifier(logger *slog.Logger, config *PushoverConfig) *PushoverN
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		config:    config,
-		rateLimit: newDomainRateLimit(config.RateLimitPer5Min),
+		config:          config,
+		domainRateLimit: newDomainRateLimit(config.RateLimitPer5Min),
+		globalRateLimit: newGlobalRateLimit(config.GlobalRateLimitPerMin),
 	}
 }
 
@@ -76,8 +81,19 @@ type NotificationEvent struct {
 }
 
 // ShouldNotify checks if a notification should be sent for this domain.
-func (n *PushoverNotifier) ShouldNotify(domain string) bool {
-	return n.rateLimit.shouldNotify(domain)
+// It checks both global and per-domain rate limits.
+func (n *PushoverNotifier) ShouldNotify(domain string) (ok bool, reason string) {
+	// Check global rate limit first.
+	if !n.globalRateLimit.shouldNotify() {
+		return false, "global"
+	}
+
+	// Check per-domain rate limit.
+	if !n.domainRateLimit.shouldNotify(domain) {
+		return false, "domain"
+	}
+
+	return true, ""
 }
 
 // SendAsync sends a notification asynchronously.
@@ -166,5 +182,5 @@ func (n *PushoverNotifier) formatMessage(event *NotificationEvent) string {
 
 // Cleanup removes old rate limit entries.
 func (n *PushoverNotifier) Cleanup() {
-	n.rateLimit.cleanup()
+	n.domainRateLimit.cleanup()
 }

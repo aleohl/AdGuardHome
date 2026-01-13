@@ -55,6 +55,39 @@ func (r *domainRateLimit) cleanup() {
 	}
 }
 
+// globalRateLimit tracks the global notification rate limit.
+type globalRateLimit struct {
+	mu       sync.Mutex
+	lastSent time.Time
+	interval time.Duration
+}
+
+// newGlobalRateLimit creates a new global rate limiter.
+// perMinute specifies the maximum notifications per minute globally.
+func newGlobalRateLimit(perMinute int) *globalRateLimit {
+	interval := time.Minute
+	if perMinute > 1 {
+		interval = time.Minute / time.Duration(perMinute)
+	}
+	return &globalRateLimit{
+		interval: interval,
+	}
+}
+
+// shouldNotify returns true if a notification can be sent globally.
+func (r *globalRateLimit) shouldNotify() bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	now := time.Now()
+	if now.Sub(r.lastSent) < r.interval {
+		return false
+	}
+
+	r.lastSent = now
+	return true
+}
+
 // processNotifications sends notifications for rule matches.
 func (s *Server) processNotifications(ctx context.Context, dctx *dnsContext, host string) {
 	result := dctx.result
@@ -65,9 +98,13 @@ func (s *Server) processNotifications(ctx context.Context, dctx *dnsContext, hos
 	// Use the first matched rule for the notification.
 	rule := result.Rules[0]
 
-	// Check rate limit before sending.
-	if !s.notifier.ShouldNotify(host) {
-		s.logger.DebugContext(ctx, "notification rate limited", "domain", host)
+	// Check rate limits before sending.
+	ok, reason := s.notifier.ShouldNotify(host)
+	if !ok {
+		s.logger.DebugContext(ctx, "notification rate limited",
+			"domain", host,
+			"limit_type", reason,
+		)
 		return
 	}
 

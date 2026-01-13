@@ -112,11 +112,12 @@ func initDNS(
 	var notifier *dnsforward.PushoverNotifier
 	if config.Notifications.Pushover.Enabled {
 		notifierConf := &dnsforward.PushoverConfig{
-			AppToken:         config.Notifications.Pushover.AppToken,
-			UserKey:          config.Notifications.Pushover.UserKey,
-			Priority:         config.Notifications.Pushover.Priority,
-			Sound:            config.Notifications.Pushover.Sound,
-			RateLimitPer5Min: config.Notifications.Pushover.RateLimitPer5Min,
+			AppToken:              config.Notifications.Pushover.AppToken,
+			UserKey:               config.Notifications.Pushover.UserKey,
+			Priority:              config.Notifications.Pushover.Priority,
+			Sound:                 config.Notifications.Pushover.Sound,
+			RateLimitPer5Min:      config.Notifications.Pushover.RateLimitPer5Min,
+			GlobalRateLimitPerMin: config.Notifications.Pushover.GlobalRateLimitPerMin,
 		}
 		notifier = dnsforward.NewPushoverNotifier(
 			baseLogger.With(slogutil.KeyPrefix, "pushover"),
