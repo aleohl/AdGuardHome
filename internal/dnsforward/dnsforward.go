@@ -130,6 +130,9 @@ type Server struct {
 	// stats is the statistics collector for client's DNS usage data.
 	stats stats.Interface
 
+	// notifier sends Pushover notifications for custom rule matches.
+	notifier *PushoverNotifier
+
 	// sysResolvers used to fetch system resolvers to use by default for private
 	// PTR resolving.
 	sysResolvers SystemResolvers
@@ -217,6 +220,10 @@ type DNSCreateParams struct {
 	Anonymizer  *aghnet.IPMut
 	EtcHosts    *aghnet.HostsContainer
 
+	// Notifier sends Pushover notifications for custom rule matches.  It may
+	// be nil if notifications are disabled.
+	Notifier *PushoverNotifier
+
 	// Logger is used as a base logger.  It must not be nil.
 	Logger *slog.Logger
 
@@ -255,6 +262,7 @@ func NewServer(p DNSCreateParams) (s *Server, err error) {
 		dhcpServer:  p.DHCPServer,
 		stats:       p.Stats,
 		queryLog:    p.QueryLog,
+		notifier:    p.Notifier,
 		privateNets: p.PrivateNets,
 		baseLogger:  p.Logger,
 		logger:      p.Logger.With(slogutil.KeyPrefix, "dnsforward"),
