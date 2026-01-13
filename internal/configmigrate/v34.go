@@ -17,6 +17,7 @@ import "context"
 //	    'app_token': ''
 //	    'user_key': ''
 //	    'rate_limit_per_5min': 1
+//	    'global_rate_limit_per_min': 1
 //	    'priority': 0
 //	    'sound': ''
 func (m Migrator) migrateTo34(_ context.Context, diskConf yobj) (err error) {
@@ -25,12 +26,13 @@ func (m Migrator) migrateTo34(_ context.Context, diskConf yobj) (err error) {
 	// Add notifications section with Pushover defaults.
 	diskConf["notifications"] = yobj{
 		"pushover": yobj{
-			"enabled":             false,
-			"app_token":           "",
-			"user_key":            "",
-			"rate_limit_per_5min": 1,
-			"priority":            0,
-			"sound":               "",
+			"enabled":                   false,
+			"app_token":                 "",
+			"user_key":                  "",
+			"rate_limit_per_5min":       1,
+			"global_rate_limit_per_min": 1,
+			"priority":                  0,
+			"sound":                     "",
 		},
 	}
 

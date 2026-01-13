@@ -472,6 +472,10 @@ type pushoverConfig struct {
 	// Default: 1.
 	RateLimitPer5Min int `yaml:"rate_limit_per_5min"`
 
+	// GlobalRateLimitPerMin is the maximum notifications per minute globally.
+	// Default: 1.
+	GlobalRateLimitPerMin int `yaml:"global_rate_limit_per_min"`
+
 	// Priority is the Pushover message priority (-2 to 2).
 	// Default: 0 (normal).
 	Priority int `yaml:"priority"`
@@ -563,9 +567,10 @@ var config = &configuration{
 	},
 	Notifications: notificationsConfig{
 		Pushover: pushoverConfig{
-			Enabled:          false,
-			RateLimitPer5Min: 1,
-			Priority:         0,
+			Enabled:               false,
+			RateLimitPer5Min:      1,
+			GlobalRateLimitPerMin: 1,
+			Priority:              0,
 		},
 	},
 	// NOTE: Keep these parameters in sync with the one put into
