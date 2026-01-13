@@ -108,6 +108,22 @@ func initDNS(
 		return err
 	}
 
+	// Initialize Pushover notifier if enabled.
+	var notifier *dnsforward.PushoverNotifier
+	if config.Notifications.Pushover.Enabled {
+		notifierConf := &dnsforward.PushoverConfig{
+			AppToken:         config.Notifications.Pushover.AppToken,
+			UserKey:          config.Notifications.Pushover.UserKey,
+			Priority:         config.Notifications.Pushover.Priority,
+			Sound:            config.Notifications.Pushover.Sound,
+			RateLimitPer5Min: config.Notifications.Pushover.RateLimitPer5Min,
+		}
+		notifier = dnsforward.NewPushoverNotifier(
+			baseLogger.With(slogutil.KeyPrefix, "pushover"),
+			notifierConf,
+		)
+	}
+
 	err = initDNSServer(
 		ctx,
 		globalContext.filters,
@@ -119,6 +135,7 @@ func initDNS(
 		tlsMgr,
 		baseLogger,
 		confModifier,
+		notifier,
 	)
 	if err != nil {
 		return fmt.Errorf("creating dns server: %w", err)
@@ -146,12 +163,14 @@ func initDNSServer(
 	tlsMgr *tlsManager,
 	l *slog.Logger,
 	confModifier agh.ConfigModifier,
+	notifier *dnsforward.PushoverNotifier,
 ) (err error) {
 	globalContext.dnsServer, err = dnsforward.NewServer(dnsforward.DNSCreateParams{
 		Logger:      l,
 		DNSFilter:   filters,
 		Stats:       sts,
 		QueryLog:    qlog,
+		Notifier:    notifier,
 		PrivateNets: parseSubnetSet(config.DNS.PrivateNets),
 		Anonymizer:  anonymizer,
 		DHCPServer:  dhcpSrv,
