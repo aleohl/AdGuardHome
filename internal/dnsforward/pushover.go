@@ -35,6 +35,10 @@ type PushoverConfig struct {
 
 	// Priority is the Pushover message priority (-2 to 2).
 	Priority int
+
+	// IgnoredReasons is the set of filtering reasons for which no
+	// notification is sent.
+	IgnoredReasons []filtering.Reason
 }
 
 // PushoverNotifier sends notifications via Pushover.
@@ -94,6 +98,17 @@ func (n *PushoverNotifier) ShouldNotify(domain string) (ok bool, reason string) 
 	}
 
 	return true, ""
+}
+
+// IsIgnoredReason returns true if the given reason is in the ignored list.
+func (n *PushoverNotifier) IsIgnoredReason(r filtering.Reason) bool {
+	for _, ignored := range n.config.IgnoredReasons {
+		if r == ignored {
+			return true
+		}
+	}
+
+	return false
 }
 
 // SendAsync sends a notification asynchronously.

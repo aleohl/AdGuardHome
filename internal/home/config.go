@@ -495,6 +495,11 @@ type pushoverConfig struct {
 	// Default: 0 (normal).
 	Priority int `yaml:"priority"`
 
+	// IgnoredReasons lists filtering reason names for which no notification
+	// is sent.  Uses the same names as in the query log (e.g. "Rewrite",
+	// "RewriteEtcHosts", "RewriteRule").
+	IgnoredReasons []string `yaml:"ignored_reasons,omitempty"`
+
 	// Enabled defines if Pushover notifications are enabled.
 	Enabled bool `yaml:"enabled"`
 }
@@ -596,6 +601,7 @@ var config = &configuration{
 			RateLimitPer5Min:      1,
 			GlobalRateLimitPerMin: 1,
 			Priority:              0,
+			IgnoredReasons:        []string{"Rewrite", "RewriteEtcHosts", "RewriteRule"},
 		},
 	},
 	// NOTE: Keep these parameters in sync with the one put into

@@ -95,6 +95,16 @@ func (s *Server) processNotifications(ctx context.Context, dctx *dnsContext, hos
 		return
 	}
 
+	// Skip if the reason is in the ignored list.
+	if s.notifier.IsIgnoredReason(result.Reason) {
+		s.logger.DebugContext(ctx, "notification skipped: reason ignored",
+			"reason", result.Reason,
+			"domain", host,
+		)
+
+		return
+	}
+
 	// Use the first matched rule for the notification.
 	rule := result.Rules[0]
 
