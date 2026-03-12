@@ -97,3 +97,14 @@ func (r Reason) String() (s string) {
 
 	return reasonNames[r]
 }
+
+// ReasonFromString returns the Reason corresponding to the given string name,
+// or an error if the name is not recognized.
+func ReasonFromString(s string) (r Reason, err error) {
+	r, ok := ReasonByName[s]
+	if !ok {
+		return 0, fmt.Errorf("unknown reason %q", s)
+	}
+
+	return r, nil
+}

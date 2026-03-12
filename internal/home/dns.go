@@ -112,6 +112,16 @@ func initDNS(
 	// Initialize Pushover notifier if enabled.
 	var notifier *dnsforward.PushoverNotifier
 	if config.Notifications.Pushover.Enabled {
+		var ignoredReasons []filtering.Reason
+		for _, s := range config.Notifications.Pushover.IgnoredReasons {
+			r, rerr := filtering.ReasonFromString(s)
+			if rerr != nil {
+				return fmt.Errorf("pushover: ignored_reasons: %w", rerr)
+			}
+
+			ignoredReasons = append(ignoredReasons, r)
+		}
+
 		notifierConf := &dnsforward.PushoverConfig{
 			AppToken:              config.Notifications.Pushover.AppToken,
 			UserKey:               config.Notifications.Pushover.UserKey,
@@ -119,6 +129,7 @@ func initDNS(
 			Sound:                 config.Notifications.Pushover.Sound,
 			RateLimitPer5Min:      config.Notifications.Pushover.RateLimitPer5Min,
 			GlobalRateLimitPerMin: config.Notifications.Pushover.GlobalRateLimitPerMin,
+			IgnoredReasons:        ignoredReasons,
 		}
 		notifier = dnsforward.NewPushoverNotifier(
 			baseLogger.With(slogutil.KeyPrefix, "pushover"),
