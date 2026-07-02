@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/AdguardTeam/AdGuardHome/internal/filtering"
@@ -48,10 +49,16 @@ type PushoverNotifier struct {
 	domainRateLimit *domainRateLimit
 	globalRateLimit *globalRateLimit
 	config          *PushoverConfig
+	serverHostname  string
 }
 
 // NewPushoverNotifier creates a new Pushover notifier.
 func NewPushoverNotifier(logger *slog.Logger, config *PushoverConfig) *PushoverNotifier {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		hostname = "unknown"
+	}
+
 	return &PushoverNotifier{
 		logger: logger,
 		client: &http.Client{
@@ -60,6 +67,7 @@ func NewPushoverNotifier(logger *slog.Logger, config *PushoverConfig) *PushoverN
 		config:          config,
 		domainRateLimit: newDomainRateLimit(config.RateLimitPer5Min),
 		globalRateLimit: newGlobalRateLimit(config.GlobalRateLimitPerMin),
+		serverHostname:  hostname,
 	}
 }
 
@@ -188,11 +196,18 @@ func (n *PushoverNotifier) formatMessage(event *NotificationEvent) string {
 		clientInfo = fmt.Sprintf("%s (%s)", event.ClientID, event.ClientIP)
 	}
 
-	return fmt.Sprintf("Domain: %s\nClient: %s\nTime: %s",
+	msg := fmt.Sprintf("Domain: %s\nClient: %s\nTime: %s",
 		event.Domain,
 		clientInfo,
 		event.Timestamp.Format(time.RFC3339),
 	)
+
+	switch event.Reason {
+	case filtering.FilteredBlockList, filtering.NotFilteredAllowList:
+		msg = fmt.Sprintf("Server: %s\n%s", n.serverHostname, msg)
+	}
+
+	return msg
 }
 
 // Cleanup removes old rate limit entries.
