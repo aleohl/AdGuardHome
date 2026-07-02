@@ -196,18 +196,12 @@ func (n *PushoverNotifier) formatMessage(event *NotificationEvent) string {
 		clientInfo = fmt.Sprintf("%s (%s)", event.ClientID, event.ClientIP)
 	}
 
-	msg := fmt.Sprintf("Domain: %s\nClient: %s\nTime: %s",
+	return fmt.Sprintf("Server: %s\nDomain: %s\nClient: %s\nTime: %s",
+		n.serverHostname,
 		event.Domain,
 		clientInfo,
 		event.Timestamp.Format(time.RFC3339),
 	)
-
-	switch event.Reason {
-	case filtering.FilteredBlockList, filtering.NotFilteredAllowList:
-		msg = fmt.Sprintf("Server: %s\n%s", n.serverHostname, msg)
-	}
-
-	return msg
 }
 
 // Cleanup removes old rate limit entries.
