@@ -119,8 +119,13 @@ func (n *PushoverNotifier) IsIgnoredReason(r filtering.Reason) bool {
 	return false
 }
 
-// SendAsync sends a notification asynchronously.
+// SendAsync sends a notification asynchronously.  The request is detached from
+// the cancellation of ctx, since ctx is usually a DNS query context that is
+// canceled as soon as the query is answered; the HTTP client timeout bounds
+// the request instead.
 func (n *PushoverNotifier) SendAsync(ctx context.Context, event *NotificationEvent) {
+	ctx = context.WithoutCancel(ctx)
+
 	go func() {
 		if err := n.send(ctx, event); err != nil {
 			n.logger.ErrorContext(ctx, "sending pushover notification",
